@@ -142,5 +142,30 @@ namespace ClearCookiesEasily.BCleaner
 
             return browser?.CookiesDbs.Sum(db => db.AllCookiesCount()) ?? result;
         }
+
+        public async Task<long> DeleteCookiesAsync(string browserName, TimeRange.Range range)
+        {
+            try
+            {
+                long result = 0;
+                var browser = _browserList.FirstOrDefault(x => x.Browser?.Name == browserName);
+
+                if (browser?.CookiesDbs == null) return result;
+
+                foreach (var db in browser.CookiesDbs)
+                {
+                    result += await db.DeleteCookiesAsync(db.BuilderTimeRangeModifier(range));
+                }
+
+                return result;
+            }
+            catch (Exception e)
+            {
+
+                _logger.Error(e);
+                return 0;
+            }
+        }
+
     }
 }

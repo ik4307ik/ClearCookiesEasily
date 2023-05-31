@@ -78,17 +78,52 @@ namespace ClearCookiesEasily.CookiesDB.SQLite
         {
             try
             {
-                var query = $@"(((strftime('%s', CURRENT_TIMESTAMP, '{range}')) + (strftime('%s', '1601-01-01') * -1)) * 1000000)";
-
                 var sQLiteCommand = $"SELECT COUNT(*) FROM {CookiesTable}";
-                if (!string.IsNullOrEmpty(range)) sQLiteCommand += " WHERE creation_utc > @value";
+                if (!string.IsNullOrEmpty(range))
+                {
+                    sQLiteCommand += " WHERE [creation_utc] > (((strftime('%s', CURRENT_TIMESTAMP, @value)) + (strftime('%s', '1601-01-01') * -1)) * 1000000)";
+                }
 
                 await using var sqlConn = new SQLiteConnection(_connectionString);
                 
                 sqlConn.Open();
 
                 var command = new SQLiteCommand(sQLiteCommand, sqlConn);
-                if (!string.IsNullOrEmpty(range)) command.Parameters.AddWithValue("@value", query);
+                if (!string.IsNullOrEmpty(range)) command.Parameters.Add(new SQLiteParameter("@value", range));
+
+                var taskResult = await command.ExecuteScalarAsync();
+
+                var result = taskResult is long longRes ? longRes : 0;
+
+                _logger.Info($"CountCookiesAsync range => {result};  {_connectionString}");
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e);
+                return 0;
+            }
+        }
+
+        public long CountCookies(string range)
+        {
+            try
+            {
+                //var query = $@"(((strftime('%s', CURRENT_TIMESTAMP, '@value')) + (strftime('%s', '1601-01-01') * -1)) * 1000000)";
+
+                var sQLiteCommand = $"SELECT COUNT(*) FROM {CookiesTable}";
+                if (!string.IsNullOrEmpty(range))
+                {
+                    sQLiteCommand += " WHERE [creation_utc] > (((strftime('%s', CURRENT_TIMESTAMP, @value)) + (strftime('%s', '1601-01-01') * -1)) * 1000000)";
+                }
+
+                using var sqlConn = new SQLiteConnection(_connectionString);
+
+                sqlConn.Open();
+
+                var command = new SQLiteCommand(sQLiteCommand, sqlConn);
+                if (!string.IsNullOrEmpty(range)) command.Parameters.Add(new SQLiteParameter("@value", range));
 
                 var taskResult = command.ExecuteScalar();
 
@@ -105,7 +140,8 @@ namespace ClearCookiesEasily.CookiesDB.SQLite
             }
         }
 
-        public async Task<long> DeleteCookies(string range)
+
+        public async Task<long> DeleteCookiesAsync(string range)
         {
             try
             {
@@ -113,19 +149,18 @@ namespace ClearCookiesEasily.CookiesDB.SQLite
                 
                 if (countBefore == 0)
                 {
-                    _logger.Warn($"DeleteCookies - counter before = 0. Nothing to delete. {_connectionString}");
+                    _logger.Warn($"DeleteCookiesAsync - counter before = 0. Nothing to delete. {_connectionString}");
                     return 0;
                 }
-
-                var query = $@"(((strftime('%s', CURRENT_TIMESTAMP, '{range}')) + (strftime('%s', '1601-01-01') * -1)) * 1000000)";
-
-                var sQLiteCommand = $"DELETE FROM {CookiesTable}";
-                if (!string.IsNullOrEmpty(range)) sQLiteCommand += " WHERE creation_utc > @value";
+                
+                var sQLiteCommand = $"DELETE FROM {CookiesTable} ";
+                if (!string.IsNullOrEmpty(range)) sQLiteCommand += " WHERE creation_utc > (((strftime('%s', CURRENT_TIMESTAMP, @value)) + (strftime('%s', '1601-01-01') * -1)) * 1000000)";
 
                 await using (var sqlConn = new SQLiteConnection(_connectionString))
                 {
+                    sqlConn.Open();
                     var command = new SQLiteCommand(sQLiteCommand, sqlConn);
-                    if (!string.IsNullOrEmpty(range)) command.Parameters.AddWithValue("@value", query);
+                    if (!string.IsNullOrEmpty(range)) command.Parameters.Add(new SQLiteParameter("@value", range));
 
                     // Execute the command.
                     await command.ExecuteNonQueryAsync();
@@ -134,7 +169,7 @@ namespace ClearCookiesEasily.CookiesDB.SQLite
                 var countAfter = await CountCookiesAsync(range);
                 if (countAfter <= 0) return countBefore;
                 
-                _logger.Warn($"DeleteCookies - counter after = {countAfter}. Delete operation faild.  {_connectionString}");
+                _logger.Warn($"DeleteCookiesAsync - counter after = {countAfter}. Delete operation faild.  {_connectionString}");
                 return 0;
             }
             catch (Exception e)

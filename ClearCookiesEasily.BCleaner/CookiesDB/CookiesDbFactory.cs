@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ClearCookiesEasily.CookiesDB
 {
-    internal class CookiesDbFactory : ICookiesDbFactory
+    public class CookiesDbFactory : ICookiesDbFactory
     {
         public ICookiesDb Create(ILogger logger) 
         {

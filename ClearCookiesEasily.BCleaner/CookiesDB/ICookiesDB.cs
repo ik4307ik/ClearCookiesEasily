@@ -14,8 +14,11 @@ namespace ClearCookiesEasily.CookiesDB
         public bool IsInit { get; }
         long AllCookiesCount();
 
-        Task<long> DeleteCookies(string range);
+        Task<long> DeleteCookiesAsync(string range);
         Task<long> CountCookiesAsync(string range);
+
+        long CountCookies(string range);
+
 
         string BuilderTimeRangeModifier(TimeRange.Range range);
     }

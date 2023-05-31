@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             lvBrowsers = new ListView();
             comboBoxTimeRange = new ComboBox();
             btnClear = new Button();
@@ -69,7 +70,9 @@
             Controls.Add(btnClear);
             Controls.Add(comboBoxTimeRange);
             Controls.Add(lvBrowsers);
-            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MaximizeBox = false;
             Name = "Form1";
             Text = "Clear Cookies Easily";
             Load += Form1_Load;

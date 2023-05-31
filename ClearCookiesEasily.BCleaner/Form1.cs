@@ -1,3 +1,4 @@
+using System.Text;
 using ClearCookiesEasily.BCleaner;
 using ClearCookiesEasily.CookiesDB;
 using MintPlayer.IconUtils;
@@ -92,23 +93,21 @@ namespace ClearCookiesEasily
             }
         }
 
-        private void BtnClear_Click(object sender, EventArgs e)
+        private async void BtnClear_Click(object sender, EventArgs e)
         {
+            var resultMessage = new StringBuilder();
             foreach (var item in lvBrowsers.CheckedItems.Cast<ListViewItem>())
             {
-
                 var browser = _browsers.FirstOrDefault(x => x.Name == item.Text);
-
                 var range = (TimeRange.Range)(comboBoxTimeRange.SelectedValue ?? TimeRange.Range.LastHour);
-
                 if (browser?.Name != null)
                 {
-                    var s = _bCleaner.AllCookiesCount(browser.Name);
-                    //var s = _bCleaner.CountCookies(browser.Name, range);
-                    //s.Wait();
-                    //var eee = s.Result;
+                    var deletedCount = await _bCleaner.DeleteCookiesAsync(browser.Name, range);
+                    resultMessage.AppendLine($"{browser.Name} - {deletedCount} cookies");
                 }
+
             }
+            MessageBox.Show(resultMessage.ToString(), @"Result", MessageBoxButtons.OK);
         }
     }
 }
