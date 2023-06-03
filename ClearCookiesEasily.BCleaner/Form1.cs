@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using ClearCookiesEasily.BCleaner;
 using ClearCookiesEasily.CookiesDB;
@@ -95,19 +96,88 @@ namespace ClearCookiesEasily
 
         private async void BtnClear_Click(object sender, EventArgs e)
         {
-            var resultMessage = new StringBuilder();
-            foreach (var item in lvBrowsers.CheckedItems.Cast<ListViewItem>())
+            try
             {
-                var browser = _browsers.FirstOrDefault(x => x.Name == item.Text);
-                var range = (TimeRange.Range)(comboBoxTimeRange.SelectedValue ?? TimeRange.Range.LastHour);
-                if (browser?.Name != null)
+                progressBar1.MarqueeAnimationSpeed = 50;
+                progressBar1.Visible = true;
+
+
+                var resultMessage = new StringBuilder();
+
+                var browsersEnumerable = _browsers.Where(x =>
+                    lvBrowsers.CheckedItems.Cast<ListViewItem>().Select(l => l.Text).Contains(x.Name));
+
+                var selectedBrowsers = browsersEnumerable as Browser[] ?? browsersEnumerable.ToArray();
+                if (!selectedBrowsers.Any()) return;
+
+                var runningBrowsers = await IsBrowsersRunning(selectedBrowsers);
+                if (!string.IsNullOrEmpty(runningBrowsers))
                 {
+                    MessageBox.Show($@"Close the {runningBrowsers} browser and retry", this.Text, MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                foreach (var browser in selectedBrowsers)
+                {
+                    var range = (TimeRange.Range)(comboBoxTimeRange.SelectedValue ?? TimeRange.Range.LastHour);
+                    if (browser?.Name == null) continue;
+
                     var deletedCount = await _bCleaner.DeleteCookiesAsync(browser.Name, range);
                     resultMessage.AppendLine($"{browser.Name} - {deletedCount} cookies");
                 }
 
+
+                MessageBox.Show(resultMessage.ToString(), this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            MessageBox.Show(resultMessage.ToString(), @"Result", MessageBoxButtons.OK);
+            catch (Exception ex)
+            {
+                _logger.Error($"BtnClear_Click exception: {ex}");
+            }
+            finally
+            {
+                progressBar1.MarqueeAnimationSpeed = 0;
+                progressBar1.Visible = false;
+            }
+        }
+
+        private static async Task<string> IsBrowsersRunning(IEnumerable<Browser> selectedBrowsers)
+        {
+            var isRunning = string.Empty;
+            foreach (var browser in selectedBrowsers)
+            {
+                if (!await IsAppRunning(browser.Version.FileName)) continue;
+
+                isRunning += $"{browser.Name}; ";
+            }
+
+            return isRunning;
+        }
+
+        private static async Task<bool> IsAppRunning(string fileName)
+        {
+            var task = Task.Run(() =>
+            {
+                foreach (var processes in Process.GetProcesses())
+                {
+                    try
+                    {
+                        if (processes.MainModule?.FileVersionInfo.FileName == fileName)
+                        {
+                            return true;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }
+
+                return false;
+            });
+            await task;
+
+            return task.Result;
         }
     }
 }

@@ -32,6 +32,7 @@
             lvBrowsers = new ListView();
             comboBoxTimeRange = new ComboBox();
             btnClear = new Button();
+            progressBar1 = new ProgressBar();
             SuspendLayout();
             // 
             // lvBrowsers
@@ -62,11 +63,22 @@
             btnClear.UseVisualStyleBackColor = true;
             btnClear.Click += BtnClear_Click;
             // 
+            // progressBar1
+            // 
+            progressBar1.Location = new Point(140, 267);
+            progressBar1.MarqueeAnimationSpeed = 0;
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(233, 23);
+            progressBar1.Style = ProgressBarStyle.Marquee;
+            progressBar1.TabIndex = 6;
+            progressBar1.Visible = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(467, 301);
+            Controls.Add(progressBar1);
             Controls.Add(btnClear);
             Controls.Add(comboBoxTimeRange);
             Controls.Add(lvBrowsers);
@@ -84,5 +96,6 @@
         private ListView lvBrowsers;
         private ComboBox comboBoxTimeRange;
         private Button btnClear;
+        private ProgressBar progressBar1;
     }
 }

@@ -27,7 +27,8 @@ namespace ClearCookiesEasily.BCleaner
         {
             try
             {
-                var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+                var path = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))
+                    .FullName;
                 var cookiesFiles = Directory.GetFiles(path, "Cookies", new EnumerationOptions { IgnoreInaccessible = true, RecurseSubdirectories = true });
                 if (!cookiesFiles.Any())
                 {
